@@ -11,9 +11,10 @@
 
 #define MAX_DUTY ((97 * 8192 / 100) * 256)
 #define MIN_DUTY ((5 * 8192 / 100) * 256)
+#define MID_DUTY ((50 * 8192 / 100) * 256)
 
 // samples to average over
-#define NUMBER_OF_SAMPLES 8
+#define NUMBER_OF_SAMPLES 3
 
 static esp_adc_cal_characteristics_t adc1_chars;
 static int duty = 0;
@@ -35,7 +36,8 @@ void power_task()
   int voltage_diff = 1500 - sense_v;
   integral += voltage_diff;
 
-  duty = 1200 * voltage_diff + 100 * integral;
+  // duty = MID_DUTY + 100 * voltage_diff + 100 * integral;
+  duty = MID_DUTY + 100 * integral;
 
   duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 
@@ -101,7 +103,7 @@ void setup()
   // xTaskCreatePinnedToCore(power_task, "power_task", 2048, NULL, 5, NULL, 1);
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &power_task, true);
-  timerAlarmWrite(timer, 500, true);
+  timerAlarmWrite(timer, 250, true);
   timerAlarmEnable(timer);
 
   // Configure the alarm value and the interrupt on alarm.
@@ -115,7 +117,8 @@ void setup()
 
 void loop()
 {
-  Serial.printf("%d,%f,%f,%d\n", integral, ((100 * duty) >> 11) / 1024.0f, sense_v / 1000.0f, count);
+  Serial.printf("%f,%f\n", ((100 * duty) >> 11) / 1024.0f, sense_v / 1000.0f);
+  // Serial.printf("%f\n", sense_v / 1000.0f);
   count = 0;
   delay(1);
 }
