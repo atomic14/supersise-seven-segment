@@ -9,40 +9,92 @@
 // GPIO_33
 #define SENSE_CHANNEL ADC1_CHANNEL_5
 
-#define MAX_DUTY ((97 * 8192 / 100) * 256)
-#define MIN_DUTY ((5 * 8192 / 100) * 256)
-#define MID_DUTY ((50 * 8192 / 100) * 256)
+#define MAX_DUTY ((1000 * 97 * 1024) / 100)
+#define MIN_DUTY ((1000 * 5 * 1024) / 100)
+#define MID_DUTY ((1000 * 50 * 1024) / 100)
 
 // samples to average over
-#define NUMBER_OF_SAMPLES 3
+#define NUMBER_OF_SAMPLES 8
 
 static esp_adc_cal_characteristics_t adc1_chars;
 static int duty = 0;
 uint sense_v = 0;
 int integral = 0;
 int count = 0;
+int x = 0;
+int bitIndex = 0;
+int digit = 0;
+uint32_t samples[NUMBER_OF_SAMPLES];
+int sample_index = 0;
+
+uint8_t digitMapping[] = {
+    0b01110111, // 0
+    0b00010100, // 1
+    0b01101101, // 2
+    0b01011101, // 3
+    0b00011110, // 4
+    0b01011011, // 5
+    0b01111011, // 6
+    0b00010101, // 7
+    0b01111111, // 8
+    0b01011111, // 9
+};
 
 void power_task()
 {
-  count++;
-  uint32_t value_sense = 0;
+  samples[sample_index] = adc1_get_raw(SENSE_CHANNEL);
+  sample_index++;
+  if (sample_index >= NUMBER_OF_SAMPLES)
+  {
+    sample_index = 0;
+  }
+  uint32_t values[NUMBER_OF_SAMPLES];
   for (int i = 0; i < NUMBER_OF_SAMPLES; i++)
   {
-    value_sense += adc1_get_raw(SENSE_CHANNEL);
+    values[i] = samples[i];
   }
-  value_sense /= NUMBER_OF_SAMPLES;
+  std::sort(values, values + NUMBER_OF_SAMPLES);
+  uint32_t value_sense = (values[NUMBER_OF_SAMPLES / 2] + values[NUMBER_OF_SAMPLES / 2 - 1]) / 2;
   sense_v = esp_adc_cal_raw_to_voltage(value_sense, &adc1_chars);
 
   int voltage_diff = 1500 - sense_v;
   integral += voltage_diff;
 
-  // duty = MID_DUTY + 100 * voltage_diff + 100 * integral;
   duty = MID_DUTY + 100 * integral;
 
   duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 
-  ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, duty >> 11);
+  ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, duty / 1000);
   ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+
+  x++;
+  if (x == 4000)
+  {
+    x = 0;
+    count++;
+    if (count == 10)
+    {
+      count = 0;
+    }
+  }
+  int on = digitMapping[count] & (1 << bitIndex);
+  // enable output
+  digitalWrite(GPIO_NUM_25, on && digit == 0);
+
+  digitalWrite(GPIO_NUM_15, bitIndex & 1);
+  digitalWrite(GPIO_NUM_27, bitIndex & 2);
+  digitalWrite(GPIO_NUM_26, bitIndex & 4);
+
+  bitIndex++;
+  if (bitIndex == 7)
+  {
+    bitIndex = 0;
+    digit++;
+    if (digit == 4)
+    {
+      digit = 0;
+    }
+  }
 }
 
 void get_adc_calibration(adc_unit_t adc_unit, esp_adc_cal_characteristics_t *adc_chars)
@@ -103,22 +155,17 @@ void setup()
   // xTaskCreatePinnedToCore(power_task, "power_task", 2048, NULL, 5, NULL, 1);
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &power_task, true);
-  timerAlarmWrite(timer, 250, true);
+  timerAlarmWrite(timer, 100, true);
   timerAlarmEnable(timer);
 
-  // Configure the alarm value and the interrupt on alarm.
-  // timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 0x00000001ULL);
-  // timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-  // timer_isr_register(TIMER_GROUP_0, TIMER_0, power_task,
-  //                    NULL, ESP_INTR_FLAG_IRAM, NULL);
-
-  // timer_start(TIMER_GROUP_0, TIMER_0);
+  pinMode(GPIO_NUM_25, OUTPUT);
+  pinMode(GPIO_NUM_26, OUTPUT);
+  pinMode(GPIO_NUM_27, OUTPUT);
+  pinMode(GPIO_NUM_15, OUTPUT);
 }
 
 void loop()
 {
-  Serial.printf("%f,%f\n", ((100 * duty) >> 11) / 1024.0f, sense_v / 1000.0f);
-  // Serial.printf("%f\n", sense_v / 1000.0f);
-  count = 0;
-  delay(1);
+  Serial.printf("duty:%f,i:%f,v:%f\n", duty / (1024.0f * 10.0f), integral / 1000.0f, sense_v / 1000.0f);
+  delay(100);
 }
