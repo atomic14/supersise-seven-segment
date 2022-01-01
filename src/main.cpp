@@ -17,11 +17,10 @@
 #define NUMBER_OF_SAMPLES 8
 
 static esp_adc_cal_characteristics_t adc1_chars;
-static int duty = 0;
+static int duty = MID_DUTY;
 uint sense_v = 0;
-int integral = 0;
-int count = 0;
 int x = 0;
+int count = 0;
 int bitIndex = 0;
 int digit = 0;
 uint32_t samples[NUMBER_OF_SAMPLES];
@@ -58,9 +57,8 @@ void power_task()
   sense_v = esp_adc_cal_raw_to_voltage(value_sense, &adc1_chars);
 
   int voltage_diff = 1500 - sense_v;
-  integral += voltage_diff;
 
-  duty = MID_DUTY + 100 * integral;
+  duty += 100 * voltage_diff;
 
   duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 
@@ -166,6 +164,6 @@ void setup()
 
 void loop()
 {
-  Serial.printf("duty:%f,i:%f,v:%f\n", duty / (1024.0f * 10.0f), integral / 1000.0f, sense_v / 1000.0f);
+  Serial.printf("duty:%f,v:%f\n", duty / (1024.0f * 10.0f), sense_v / 1000.0f);
   delay(100);
 }
