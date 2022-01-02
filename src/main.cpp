@@ -58,7 +58,7 @@ void power_task()
 
   int voltage_diff = 1500 - sense_v;
 
-  duty += 100 * voltage_diff;
+  duty = duty + 20 * voltage_diff;
 
   duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 
@@ -76,12 +76,16 @@ void power_task()
     }
   }
   int on = digitMapping[count] & (1 << bitIndex);
-  // enable output
-  digitalWrite(GPIO_NUM_25, on && digit == 0);
-
+  // enable the correct digit
+  digitalWrite(GPIO_NUM_14, digit == 0);
+  // turn off the segments
+  digitalWrite(GPIO_NUM_25, LOW);
+  // set the correct segment
   digitalWrite(GPIO_NUM_15, bitIndex & 1);
   digitalWrite(GPIO_NUM_27, bitIndex & 2);
   digitalWrite(GPIO_NUM_26, bitIndex & 4);
+  // enable output to the segment
+  digitalWrite(GPIO_NUM_25, on);
 
   bitIndex++;
   if (bitIndex == 7)
@@ -136,7 +140,7 @@ void setup()
   ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
   ledc_timer.duty_resolution = LEDC_TIMER_10_BIT;
   ledc_timer.timer_num = LEDC_TIMER_0;
-  ledc_timer.freq_hz = 20000;
+  ledc_timer.freq_hz = 40000;
 
   ledc_timer_config(&ledc_timer);
 
@@ -160,10 +164,11 @@ void setup()
   pinMode(GPIO_NUM_26, OUTPUT);
   pinMode(GPIO_NUM_27, OUTPUT);
   pinMode(GPIO_NUM_15, OUTPUT);
+  pinMode(GPIO_NUM_14, OUTPUT);
 }
 
 void loop()
 {
-  Serial.printf("duty:%f,v:%f\n", duty / (1024.0f * 10.0f), sense_v / 1000.0f);
-  delay(100);
+  Serial.printf("duty:%f,v:%f\n", duty / (1024.0f * 10.0f), sense_v / 100.0f);
+  //delay(100);
 }
