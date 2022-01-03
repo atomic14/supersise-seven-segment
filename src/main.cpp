@@ -58,7 +58,7 @@ void power_task()
 
   int voltage_diff = 1500 - sense_v;
 
-  duty = duty + 20 * voltage_diff;
+  duty = duty + 100 * voltage_diff;
 
   duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 
