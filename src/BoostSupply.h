@@ -3,7 +3,7 @@
 #include <driver/adc.h>
 #include <esp_adc_cal.h>
 
-#define NUMBER_OF_SAMPLES 8
+#define NUMBER_OF_SAMPLES 16
 
 class BoostSupply
 {

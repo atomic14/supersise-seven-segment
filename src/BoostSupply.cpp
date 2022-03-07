@@ -2,7 +2,7 @@
 #include <driver/ledc.h>
 #include <Arduino.h>
 
-static const int MAX_DUTY = ((1000 * 97 * 1024) / 100);
+static const int MAX_DUTY = ((1000 * 90 * 1024) / 100);
 static const int MIN_DUTY = ((1000 * 5 * 1024) / 100);
 static const int MID_DUTY = ((1000 * 50 * 1024) / 100);
 
@@ -11,7 +11,7 @@ BoostSupply::BoostSupply(gpio_num_t pwm_pin, adc1_channel_t feedback_pin)
     m_feedback_pin = feedback_pin;
     // configure the ADC
     adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(feedback_pin, ADC_ATTEN_DB_11);
+    adc1_config_channel_atten(feedback_pin, ADC_ATTEN_DB_0);
 
     // get the characteristics of ADC1
     esp_adc_cal_value_t val_type = esp_adc_cal_characterize(
@@ -51,6 +51,8 @@ BoostSupply::BoostSupply(gpio_num_t pwm_pin, adc1_channel_t feedback_pin)
     ledc_channel.timer_sel = LEDC_TIMER_0;
 
     ledc_channel_config(&ledc_channel);
+
+    duty = MIN_DUTY;
 }
 
 void BoostSupply::service()
@@ -70,9 +72,9 @@ void BoostSupply::service()
     std::sort(values, values + NUMBER_OF_SAMPLES);
     uint32_t value_sense = (values[NUMBER_OF_SAMPLES / 2] + values[NUMBER_OF_SAMPLES / 2 - 1]) / 2;
     feedback_voltage = esp_adc_cal_raw_to_voltage(value_sense, &adc_chars);
-    //
-    int voltage_diff = 1500 - feedback_voltage;
-    duty = duty + 100 * voltage_diff;
+
+    int voltage_diff = 550 - feedback_voltage;
+    duty = duty + 5 * voltage_diff;
 
     duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 

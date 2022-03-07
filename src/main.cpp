@@ -9,11 +9,11 @@
 
 const adc1_channel_t BOOST_FEEDBACK_PIN = ADC1_CHANNEL_5;
 const gpio_num_t BOOST_PWM_PIN = GPIO_NUM_25;
-const gpio_num_t SERIAL_OUT_PIN = GPIO_NUM_25;
-const gpio_num_t SERIAL_CLOCK_PIN = GPIO_NUM_25;
-const gpio_num_t SERIAL_LATCH_PIN = GPIO_NUM_25;
-const gpio_num_t SERIAL_CLR_PIN = GPIO_NUM_25;
-const gpio_num_t SERIAL_ENABLE_PIN = GPIO_NUM_25;
+const gpio_num_t SERIAL_OUT_PIN = GPIO_NUM_21;
+const gpio_num_t SERIAL_CLOCK_PIN = GPIO_NUM_13;
+const gpio_num_t SERIAL_LATCH_PIN = GPIO_NUM_11;
+const gpio_num_t SERIAL_CLR_PIN = GPIO_NUM_12;
+const gpio_num_t SERIAL_ENABLE_PIN = GPIO_NUM_15;
 
 BoostSupply *boost_supply;
 Digits *digits;
@@ -79,7 +79,7 @@ void setup()
   // start up a timer to service the boost supply and write out the segments
   timer = timerBegin(0, 80, true); // this will run a timer with a 1MHz clock (80MHz/80 = 1MHz)
   timerAttachInterrupt(timer, &timer_callback, true);
-  timerAlarmWrite(timer, 50, true); // wake up everytime we hit 50 ticks (20KHz)
+  timerAlarmWrite(timer, 100, true); // wake up everytime we hit 100 ticks (10KHz)
   timerAlarmEnable(timer);
   // setup the shift registeros
   pinMode(SERIAL_OUT_PIN, OUTPUT);
@@ -98,9 +98,9 @@ void setup()
 
   // set up the touch buttons
   touchAttachInterrupt(T9, touch_button1_isr, 50);
-  touchAttachInterrupt(T9, touch_button2_isr, 50);
-  touchAttachInterrupt(T9, touch_button3_isr, 50);
-  touchAttachInterrupt(T9, touch_button4_isr, 50);
+  touchAttachInterrupt(T7, touch_button2_isr, 50);
+  touchAttachInterrupt(T6, touch_button3_isr, 50);
+  touchAttachInterrupt(T0, touch_button4_isr, 50);
 }
 
 void loop()
