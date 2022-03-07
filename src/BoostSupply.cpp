@@ -69,10 +69,10 @@ void BoostSupply::service()
     }
     std::sort(values, values + NUMBER_OF_SAMPLES);
     uint32_t value_sense = (values[NUMBER_OF_SAMPLES / 2] + values[NUMBER_OF_SAMPLES / 2 - 1]) / 2;
-    uint32_t sense_v = esp_adc_cal_raw_to_voltage(value_sense, &adc_chars);
+    feedback_voltage = esp_adc_cal_raw_to_voltage(value_sense, &adc_chars);
     //
-    int voltage_diff = 1500 - sense_v;
-    int duty = duty + 100 * voltage_diff;
+    int voltage_diff = 1500 - feedback_voltage;
+    duty = duty + 100 * voltage_diff;
 
     duty = std::max(std::min(duty, MAX_DUTY), MIN_DUTY);
 

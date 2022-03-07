@@ -2,12 +2,15 @@
 
 class Digit;
 
-class Digits {
-    private:
-        Digit *m_digits;
-        int m_number_digits;
-        public:
-        Digits(int number_digits);
-        ~Digits();
-        int get_digit_segment(int digit, int segment);
+class Digits
+{
+private:
+    Digit *m_digits;
+    int m_number_digits;
+
+public:
+    Digits(int number_digits);
+    ~Digits();
+    int get_digit_segment(int digit, int segment);
+    void set_digit(int digit, int value);
 };
