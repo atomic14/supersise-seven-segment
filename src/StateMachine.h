@@ -29,6 +29,7 @@ private:
     State state;
     TimeWrapper *time_wrapper;
     StopWatch *stop_watch;
+    uint64_t last_event_time = 0;
 
     void switch_to_state(State new_state)
     {
@@ -64,8 +65,14 @@ public:
         state = State::SHOWING_TIME;
     }
 
+    State get_state() { return state; }
+
     void proccess_event(Event event)
     {
+        // simple debounce
+        if (millis() - last_event_time < 500)
+            return;
+        last_event_time = millis();
         switch (event)
         {
         case Event::MODE_TOUCH:
@@ -78,6 +85,7 @@ public:
             case State::SHOWING_DATE:
                 switch_to_state(State::STOP_WATCH_STOPPED);
                 break;
+            case State::STOP_WATCH_RESET:
             case State::STOP_WATCH_STOPPED:
                 switch_to_state(State::SHOWING_TIME);
                 break;
@@ -90,6 +98,7 @@ public:
         {
             switch (state)
             {
+            case State::STOP_WATCH_RESET:
             case State::STOP_WATCH_STOPPED:
                 switch_to_state(State::STOP_WATCH_RUNNING);
                 break;
@@ -127,7 +136,7 @@ public:
         case State::STOP_WATCH_RESET:
         case State::STOP_WATCH_RUNNING:
         case State::STOP_WATCH_STOPPED:
-            return stop_watch->get_elapsed_time();
+            return stop_watch->get_elapsed_time() / 10000;
         case State::SHOWING_TIME:
             return time_wrapper->get_hours() * 100 + time_wrapper->get_minutes();
         case State::SHOWING_DATE:

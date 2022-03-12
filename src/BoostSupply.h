@@ -3,7 +3,7 @@
 #include <driver/adc.h>
 #include <esp_adc_cal.h>
 
-#define NUMBER_OF_SAMPLES 16
+#define NUMBER_OF_SAMPLES 8
 
 class BoostSupply
 {
@@ -14,6 +14,7 @@ private:
     int samples[NUMBER_OF_SAMPLES] = {};
     uint32_t feedback_voltage = 0;
     int duty = 0;
+    int integral = 0;
 
 public:
     BoostSupply(gpio_num_t pwm_pin, adc1_channel_t feedback_pin);

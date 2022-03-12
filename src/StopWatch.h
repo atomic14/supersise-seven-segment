@@ -5,8 +5,8 @@
 class StopWatch
 {
 private:
-    uint64_t elapsed_time = 0;
-    uint64_t start_time = 0;
+    int64_t elapsed_time = 0;
+    int64_t start_time = 0;
     bool is_running = false;
 
 public:
@@ -16,7 +16,8 @@ public:
         {
             return;
         }
-        start_time = millis();
+        start_time = esp_timer_get_time();
+        is_running = true;
     }
     void stop()
     {
@@ -24,7 +25,7 @@ public:
         {
             return;
         }
-        elapsed_time += millis() - start_time;
+        elapsed_time += esp_timer_get_time() - start_time;
         is_running = false;
     }
     void reset()
@@ -32,11 +33,11 @@ public:
         elapsed_time = 0;
         is_running = false;
     }
-    uint64_t get_elapsed_time()
+    int64_t get_elapsed_time()
     {
         if (is_running)
         {
-            return elapsed_time + (millis() - start_time);
+            return elapsed_time + (esp_timer_get_time() - start_time);
         }
         return elapsed_time;
     }
